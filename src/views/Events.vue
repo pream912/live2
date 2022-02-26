@@ -68,16 +68,16 @@
                                     </v-menu>
                                 </v-col>
                                 <v-col cols="6">
-                                    <v-file-input :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Top image (200kb max)"></v-file-input>
+                                    <v-file-input v-model="top" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Top image (200kb max)"></v-file-input>
                                 </v-col>
                                 <v-col cols="6">
-                                    <v-file-input :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Bottom image (200kb max)"></v-file-input>
+                                    <v-file-input v-model="bottom" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Bottom image (200kb max)"></v-file-input>
                                 </v-col>
                                 <v-col cols="6">
                                     <v-checkbox v-model="recording" label="Recording"></v-checkbox>
                                 </v-col>
                                 <v-col cols="6">
-                                    <v-select :disabled="!recording" label="Storage duration" :items="sdays"></v-select>
+                                    <v-select v-model="sduration" :disabled="!recording" label="Storage duration" :items="sdays"></v-select>
                                 </v-col>
                             </v-row>
                         </v-container>
@@ -100,13 +100,13 @@
             rules: [
                 value => !value || value.size < 200000 || 'Avatar size should be less than 200 KB!',
             ],
-            sdays: ['30 days', '60 days', '90 days'],
+            sdays: ['30days', '60days', '90days'],
             ename: '',
             edescription: '',
             efrom: null,
             eto: null,
-            top: '',
-            bottom: '',
+            top: null,
+            bottom: null,
             recording: false,
             sduration: '',
             fmenu: false,
