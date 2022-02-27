@@ -1,24 +1,18 @@
 <template>
     <v-container>
         <v-row class="pa-3">
+            <v-btn @click="newEvent">Create Event</v-btn>
             <v-dialog v-model="dialog"
             persistent
             max-width="750px">
-                <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                    color="primary"
-                    dark
-                    v-bind="attrs"
-                    v-on="on"
-                    >
-                    Create Event
-                    </v-btn>
-                </template>
                 <v-card>
                     <v-card-title>New Event</v-card-title>
                     <v-card-text>
                         <v-container>
                             <v-row>
+                                <v-col cols="12">
+                                    <v-text-field v-model="eid" label="Event ID"></v-text-field>
+                                </v-col>
                                 <v-col cols="12">
                                     <v-text-field v-model="ename" label="Event name"></v-text-field>
                                 </v-col>
@@ -67,12 +61,12 @@
                                         <v-date-picker v-model="eto" :max="max" :min="min"></v-date-picker>
                                     </v-menu>
                                 </v-col>
-                                <v-col cols="6">
+                                <!-- <v-col cols="6">
                                     <v-file-input v-model="top" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Top image (200kb max)"></v-file-input>
                                 </v-col>
                                 <v-col cols="6">
                                     <v-file-input v-model="bottom" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Bottom image (200kb max)"></v-file-input>
-                                </v-col>
+                                </v-col> -->
                                 <v-col cols="6">
                                     <v-checkbox v-model="recording" label="Recording"></v-checkbox>
                                 </v-col>
@@ -84,7 +78,7 @@
                     </v-card-text>
                     <v-card-actions>
                         <v-spacer></v-spacer>
-                        <v-btn rounded color="green">Create</v-btn>
+                        <v-btn @click="createEvent" rounded color="green">Create</v-btn>
                         <v-btn @click="close" rounded color="red">Cancel</v-btn>
                     </v-card-actions>
                 </v-card>
@@ -94,6 +88,9 @@
 </template>
 
 <script>
+import firebase from 'firebase/app'
+import 'firebase/storage'
+import 'firebase/database'
     export default {
         data: () => ({
             dialog: false,
@@ -111,10 +108,54 @@
             sduration: '',
             fmenu: false,
             tmenu: false,
+            eid: '',
         }),
         methods: {
+            newEvent() {
+                this.getEID()
+                this.dialog = true
+            },
             close() {
                 this.dialog = false
+            },
+            getEID() {
+                firebase.database().ref('counter/eid').get('once').then((data) => {
+                    this.eid = +data.val() + 1
+                })
+            },
+            async createEvent() {
+                var eid = null
+                var event = {
+                    ename: this.ename,
+                    edescription: this.edescription,
+                    efrom: this.efrom,
+                    eto: this.eto,
+                    recording: this.recording,
+                    sduration: this.sduration
+                }
+                var counter = await firebase.database().ref('counter/eid').get('once')
+                eid = +counter.val() + 1
+                console.log(counter);
+                await firebase.database().ref(`events/${eid}`).set(event)
+                await firebase.database().ref('counter/eid').set(eid)
+            },
+
+            getEvents() {
+                firebase.database().ref('events').get('once').then((data) => {
+                    console.log(data.val())
+                    var dat = data.val()
+                    for(let i in dat) {
+                        this.$store.commit('ADD_EVENT', {
+                            eid: i,
+                            ename: dat[i].ename,
+                            edescription: dat[i].edescription,
+                            eto: dat[i].eto,
+                            efrom: dat[i].efrom,
+                            sduration: dat[i].sduration,
+                            recording: dat[i].recording,
+                        })
+                    }
+                })
             }
         },
         computed: {
@@ -127,6 +168,13 @@
                 date.setDate(date.getDate() + 31)
                 return date.toISOString()
             },
+        },
+
+        mounted() {
+            var events = this.$store.getters.loadedEVENTS
+            if (events.length <= 0) {
+                this.getEvents()
+            }
         }
     };
 </script>

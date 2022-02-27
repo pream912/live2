@@ -21,7 +21,8 @@ new Vue({
             projectId: "live2-3af8b",
             storageBucket: "live2-3af8b.appspot.com",
             messagingSenderId: "310056093070",
-            appId: "1:310056093070:web:0da53597c0f863587110df"
+            appId: "1:310056093070:web:0da53597c0f863587110df",
+            databaseURL: "https://live2-3af8b-default-rtdb.asia-southeast1.firebasedatabase.app"
         })
     }
 }).$mount('#app')
