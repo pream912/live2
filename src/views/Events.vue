@@ -1,7 +1,7 @@
 <template>
     <v-container>
         <v-row class="pa-3">
-            <v-btn @click="newEvent">Create Event</v-btn>
+            <v-btn color="primary" @click="newEvent">Create Event</v-btn>
             <v-dialog v-model="dialog"
             persistent
             max-width="750px">
@@ -78,11 +78,19 @@
                     </v-card-text>
                     <v-card-actions>
                         <v-spacer></v-spacer>
-                        <v-btn @click="createEvent" rounded color="green">Create</v-btn>
+                        <v-btn :loading="loading" @click="createEvent" rounded color="green">Create</v-btn>
                         <v-btn @click="close" rounded color="red">Cancel</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-dialog>
+        </v-row>
+        <v-row>
+            <v-col cols="12">
+                <v-data-table
+                sort-desc=""
+                :headers="headers"
+                :items="events"></v-data-table>
+            </v-col>
         </v-row>
     </v-container>
 </template>
@@ -94,6 +102,10 @@ import 'firebase/database'
     export default {
         data: () => ({
             dialog: false,
+            headers: [
+                {text: 'Event ID', sortable: true, value: 'eid'},
+                {text: 'Event name', value: 'ename'},
+            ],
             rules: [
                 value => !value || value.size < 200000 || 'Avatar size should be less than 200 KB!',
             ],
@@ -109,6 +121,7 @@ import 'firebase/database'
             fmenu: false,
             tmenu: false,
             eid: '',
+            loading: false,
         }),
         methods: {
             newEvent() {
@@ -117,6 +130,14 @@ import 'firebase/database'
             },
             close() {
                 this.dialog = false
+                this.eid = ''
+                this.ename = ''
+                this.edescription = ''
+                this.efrom = null
+                this.eto = null
+                this.sduration = ''
+                this.recording = false
+                this.loading = false
             },
             getEID() {
                 firebase.database().ref('counter/eid').get('once').then((data) => {
@@ -124,6 +145,7 @@ import 'firebase/database'
                 })
             },
             async createEvent() {
+                this.loading = true
                 var eid = null
                 var event = {
                     ename: this.ename,
@@ -138,6 +160,8 @@ import 'firebase/database'
                 console.log(counter);
                 await firebase.database().ref(`events/${eid}`).set(event)
                 await firebase.database().ref('counter/eid').set(eid)
+                this.$store.commit('ADD_EVENT', {eid: eid, ...event})
+                this.close()
             },
 
             getEvents() {
@@ -168,6 +192,9 @@ import 'firebase/database'
                 date.setDate(date.getDate() + 31)
                 return date.toISOString()
             },
+            events () {
+                return this.$store.getters.loadedEVENTS
+            }
         },
 
         mounted() {
