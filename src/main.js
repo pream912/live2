@@ -24,5 +24,13 @@ new Vue({
             appId: "1:310056093070:web:0da53597c0f863587110df",
             databaseURL: "https://live2-3af8b-default-rtdb.asia-southeast1.firebasedatabase.app"
         })
+        firebase.auth().onAuthStateChanged(user => {
+            if(user) {
+                store.commit('SET_LOGGED_IN', true)
+            }
+            else {
+              store.commit('SET_LOGGED_IN', false) 
+            }
+          })
     }
 }).$mount('#app')

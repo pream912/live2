@@ -11,9 +11,6 @@
                         <v-container>
                             <v-row>
                                 <v-col cols="12">
-                                    <v-text-field v-model="eid" label="Event ID"></v-text-field>
-                                </v-col>
-                                <v-col cols="12">
                                     <v-text-field v-model="ename" label="Event name"></v-text-field>
                                 </v-col>
                                 <v-col cols="12">
@@ -87,10 +84,53 @@
         <v-row>
             <v-col cols="12">
                 <v-data-table
-                sort-desc=""
                 :headers="headers"
-                :items="events"></v-data-table>
+                :items="events">
+                        <template v-slot:[`item.actions`]="{ item }">
+                        <v-icon
+                            small
+                            color="orange"
+                            class="mr-2"
+                            @click="openEvent(item)"
+                        >
+                            mdi-pencil
+                        </v-icon>
+                    </template>
+                </v-data-table>
             </v-col>
+        </v-row>
+        <v-row>
+            <v-dialog 
+            v-model="dialog1" 
+            fullscreen
+            hide-overlay
+            transition="dialog-bottom-transition">
+                <v-card>
+                    <v-toolbar>
+                        <v-btn  @click="dialog1 = false" small icon>
+                            <v-icon class="red--text">mdi-close</v-icon>
+                        </v-btn>
+                    </v-toolbar>
+                    <v-card-text>
+                        <v-container>
+                            <v-row lazy-validation>
+                                <v-col cols="6">
+                                    <v-file-input v-model="top" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Top image (200kb max)"></v-file-input>
+                                </v-col>
+                                <v-col cols="6">
+                                    <v-file-input v-model="bottom" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Bottom image (200kb max)"></v-file-input>
+                                </v-col>
+                                <v-col cols="6">
+                                    <v-text-field :rules="sdrules" v-model="sdomain" label="URL"></v-text-field>
+                                </v-col>
+                                <v-col cols="6">
+                                    <h4>.you2live.in</h4>
+                                </v-col>
+                            </v-row>
+                        </v-container>
+                    </v-card-text>
+                </v-card>
+            </v-dialog>
         </v-row>
     </v-container>
 </template>
@@ -99,12 +139,19 @@
 import firebase from 'firebase/app'
 import 'firebase/storage'
 import 'firebase/database'
+import 'firebase/auth'
     export default {
         data: () => ({
             dialog: false,
+            dialog1: false,
+            sdomain: '',
+            sdrules: [
+                v => !!v || 'Value is required',
+                v => /^[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]$/.test(v) || 'Invalid value',
+            ],
             headers: [
-                {text: 'Event ID', sortable: true, value: 'eid'},
                 {text: 'Event name', value: 'ename'},
+                { text: 'Actions', value: 'actions'},
             ],
             rules: [
                 value => !value || value.size < 200000 || 'Avatar size should be less than 200 KB!',
@@ -120,17 +167,14 @@ import 'firebase/database'
             sduration: '',
             fmenu: false,
             tmenu: false,
-            eid: '',
             loading: false,
         }),
         methods: {
             newEvent() {
-                this.getEID()
                 this.dialog = true
             },
             close() {
                 this.dialog = false
-                this.eid = ''
                 this.ename = ''
                 this.edescription = ''
                 this.efrom = null
@@ -139,14 +183,8 @@ import 'firebase/database'
                 this.recording = false
                 this.loading = false
             },
-            getEID() {
-                firebase.database().ref('counter/eid').get('once').then((data) => {
-                    this.eid = +data.val() + 1
-                })
-            },
             async createEvent() {
                 this.loading = true
-                var eid = null
                 var event = {
                     ename: this.ename,
                     edescription: this.edescription,
@@ -155,18 +193,12 @@ import 'firebase/database'
                     recording: this.recording,
                     sduration: this.sduration
                 }
-                var counter = await firebase.database().ref('counter/eid').get('once')
-                eid = +counter.val() + 1
-                console.log(counter);
-                await firebase.database().ref(`events/${eid}`).set(event)
-                await firebase.database().ref('counter/eid').set(eid)
-                this.$store.commit('ADD_EVENT', {eid: eid, ...event})
+                await firebase.database().ref(`events/${this.uid}`).push(event)
                 this.close()
             },
 
             getEvents() {
-                firebase.database().ref('events').get('once').then((data) => {
-                    console.log(data.val())
+                firebase.database().ref(`events/${this.uid}`).get('once').then((data) => {
                     var dat = data.val()
                     for(let i in dat) {
                         this.$store.commit('ADD_EVENT', {
@@ -180,6 +212,11 @@ import 'firebase/database'
                         })
                     }
                 })
+            },
+
+            openEvent(item) {
+                console.log(item);
+                this.dialog1 = true
             }
         },
         computed: {
@@ -194,6 +231,9 @@ import 'firebase/database'
             },
             events () {
                 return this.$store.getters.loadedEVENTS
+            },
+            uid () {
+                return firebase.auth().currentUser.uid
             }
         },
 
