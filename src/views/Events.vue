@@ -9,12 +9,12 @@
                     <v-card-title>New Event</v-card-title>
                     <v-card-text>
                         <v-container>
-                            <v-row>
+                            <v-row lazy-validation>
                                 <v-col cols="12">
-                                    <v-text-field v-model="ename" label="Event name"></v-text-field>
+                                    <v-text-field required v-model="ename" label="Event name"></v-text-field>
                                 </v-col>
                                 <v-col cols="12">
-                                    <v-textarea v-model="edescription" label="Event description"></v-textarea>
+                                    <v-textarea required v-model="edescription" label="Event description"></v-textarea>
                                 </v-col>
                                 <v-col cols="6">
                                     <v-menu
@@ -65,6 +65,12 @@
                                     <v-file-input v-model="bottom" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Bottom image (200kb max)"></v-file-input>
                                 </v-col> -->
                                 <v-col cols="6">
+                                    <v-text-field :rules="sdrules" v-model="sdomain" label="URL"></v-text-field>
+                                </v-col>
+                                <v-col cols="6">
+                                    <h4>.you2live.in</h4>
+                                </v-col>
+                                <v-col cols="6">
                                     <v-checkbox v-model="recording" label="Recording"></v-checkbox>
                                 </v-col>
                                 <v-col cols="6">
@@ -113,7 +119,7 @@
                     </v-toolbar>
                     <v-card-text>
                         <v-container>
-                            <v-row lazy-validation>
+                            <v-row>
                                 <v-col cols="6">
                                     <v-file-input v-model="top" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Top image (200kb max)"></v-file-input>
                                 </v-col>
@@ -151,6 +157,7 @@ import 'firebase/auth'
             ],
             headers: [
                 {text: 'Event name', value: 'ename'},
+                {text: 'Stream key', value: 'streamkey'},
                 { text: 'Actions', value: 'actions'},
             ],
             rules: [
@@ -184,17 +191,28 @@ import 'firebase/auth'
                 this.loading = false
             },
             async createEvent() {
+                var rString = this.randomString(7, '0123456789abcdefghijklmnopqrstuvwxyz');
                 this.loading = true
                 var event = {
                     ename: this.ename,
                     edescription: this.edescription,
                     efrom: this.efrom,
                     eto: this.eto,
+                    sdomain: this.sdomain,
                     recording: this.recording,
-                    sduration: this.sduration
+                    sduration: this.sduration,
+                    streamkey: rString
                 }
+                var url = `https://${this.sdomain}.you2live.com/live/${rString}/index.m3u8`
                 await firebase.database().ref(`events/${this.uid}`).push(event)
-                this.close()
+                await firebase.database().ref(`streams/${this.sdomain}`).set({url:url})
+                this.close()                
+            },
+
+            randomString(length, chars) {
+                var result = '';
+                for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+                return result;
             },
 
             getEvents() {
@@ -209,6 +227,7 @@ import 'firebase/auth'
                             efrom: dat[i].efrom,
                             sduration: dat[i].sduration,
                             recording: dat[i].recording,
+                            streamkey: dat[i].streamkey
                         })
                     }
                 })
