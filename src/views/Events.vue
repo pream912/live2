@@ -99,7 +99,7 @@
                             class="mr-2"
                             @click="openEvent(item)"
                         >
-                            mdi-pencil
+                            mdi-wrench
                         </v-icon>
                     </template>
                 </v-data-table>
@@ -113,6 +113,8 @@
             transition="dialog-bottom-transition">
                 <v-card>
                     <v-toolbar>
+                        <h3 class="pl-3">{{ename}}</h3>
+                        <v-spacer></v-spacer>
                         <v-btn  @click="dialog1 = false" small icon>
                             <v-icon class="red--text">mdi-close</v-icon>
                         </v-btn>
@@ -120,23 +122,49 @@
                     <v-card-text>
                         <v-container>
                             <v-row>
+                                <table>
+                                    <tr>
+                                        <td>Uplink:</td>
+                                        <td class="pa-3">rtmp://{{sdomain}}.you2live.com/live</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Stream link:</td>
+                                        <td class="pa-3">https://{{sdomain}}.you2live.com</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Stream key:</td>
+                                        <td class="pa-3">{{streamkey}}</td>
+                                    </tr>
+                                </table>
+                            </v-row>
+                            <v-divider></v-divider>
+                            <v-row>
                                 <v-col cols="6">
                                     <v-file-input v-model="top" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Top image (200kb max)"></v-file-input>
                                 </v-col>
                                 <v-col cols="6">
                                     <v-file-input v-model="bottom" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Bottom image (200kb max)"></v-file-input>
                                 </v-col>
-                                <v-col cols="6">
-                                    <v-text-field :rules="sdrules" v-model="sdomain" label="URL"></v-text-field>
-                                </v-col>
-                                <v-col cols="6">
-                                    <h4>.you2live.in</h4>
+                                <v-divider></v-divider>
+                                <v-col cols="12">
+                                    <v-btn :loading="uploading" @click="uploadImg" color="primary">Update</v-btn>
                                 </v-col>
                             </v-row>
                         </v-container>
                     </v-card-text>
                 </v-card>
             </v-dialog>
+        </v-row>
+        <v-row>
+            <v-snackbar
+            v-model="snackbar"
+            timeout="2000"
+            :color="scolor"
+            centered
+            outlined
+            top>
+                {{snack}}
+            </v-snackbar>
         </v-row>
     </v-container>
 </template>
@@ -148,15 +176,20 @@ import 'firebase/database'
 import 'firebase/auth'
     export default {
         data: () => ({
+            snackbar: false,
+            snack: '',
+            scolor: '',
             dialog: false,
             dialog1: false,
             sdomain: '',
+            streamkey: '',
             sdrules: [
                 v => !!v || 'Value is required',
                 v => /^[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]$/.test(v) || 'Invalid value',
             ],
             headers: [
                 {text: 'Event name', value: 'ename'},
+                {text: 'Event Date', value: 'efrom'},
                 {text: 'Stream key', value: 'streamkey'},
                 { text: 'Actions', value: 'actions'},
             ],
@@ -175,6 +208,7 @@ import 'firebase/auth'
             fmenu: false,
             tmenu: false,
             loading: false,
+            uploading: false
         }),
         methods: {
             newEvent() {
@@ -209,6 +243,39 @@ import 'firebase/auth'
                 this.close()                
             },
 
+            async uploadImg() {
+
+                if(this.top != null) {
+                    this.uploading = true
+                    firebase.storage().ref(`images/${this.sdomain}/top`).put(this.top)
+                    .then((fileData) => {
+                        return firebase.storage().ref(fileData.metadata.fullPath).getDownloadURL()  
+                    })
+                    .then((url) => {
+                        firebase.database().ref(`streams/${this.sdomain}/top`).set(url)
+                        this.snackbar = true
+                        this.snack = 'Top image uploaded'
+                        this.scolor = 'success'
+                        this.uploading = false
+                    })
+                }
+
+                if(this.bottom != null) {
+                    this.uploading = true
+                    firebase.storage().ref(`images/${this.sdomain}/bottom`).put(this.bottom)
+                    .then((fileData) => {
+                        return firebase.storage().ref(fileData.metadata.fullPath).getDownloadURL()  
+                    })
+                    .then((url) => {
+                        firebase.database().ref(`streams/${this.sdomain}/bottom`).set(url)
+                        this.snackbar = true
+                        this.snack = 'Bottom image uploaded'
+                        this.scolor = 'success'
+                        this.uploading = false
+                    })
+                }
+            },
+
             randomString(length, chars) {
                 var result = '';
                 for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
@@ -227,6 +294,7 @@ import 'firebase/auth'
                             efrom: dat[i].efrom,
                             sduration: dat[i].sduration,
                             recording: dat[i].recording,
+                            sdomain: dat[i].sdomain,
                             streamkey: dat[i].streamkey
                         })
                     }
@@ -234,8 +302,10 @@ import 'firebase/auth'
             },
 
             openEvent(item) {
-                console.log(item);
                 this.dialog1 = true
+                this.sdomain = item.sdomain
+                this.streamkey = item.streamkey
+                this.ename = item.ename
             }
         },
         computed: {
