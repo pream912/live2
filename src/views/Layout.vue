@@ -8,7 +8,7 @@
                     mdi-account-circle
                 </v-icon>
             </v-avatar>
-            <v-toolbar-title>Pream</v-toolbar-title>
+            <v-toolbar-title>{{user.name}}</v-toolbar-title>
         </v-app-bar>
         <v-navigation-drawer app absolute v-model="drawer">
             <v-list-item>
@@ -28,6 +28,14 @@
                         <v-list-item-title>Events</v-list-item-title>
                     </v-list-item-content>
                 </v-list-item>
+                <v-list-item link to="/profile">
+                    <v-list-item-icon>
+                        <v-icon> mdi-account </v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                        <v-list-item-title>Profile</v-list-item-title>
+                    </v-list-item-content>
+                </v-list-item>
             </v-list>
             <template v-slot:append>
                 <div class="pa-2">
@@ -36,6 +44,7 @@
             </template>
         </v-navigation-drawer>
         <v-main>
+            <v-alert :value="alert.alert" :type="alert.type">{{alert.message}}</v-alert>
             <router-view/>
         </v-main>
     </div>
@@ -47,5 +56,14 @@ export default {
   data: () => ({
     drawer: true,
   }),
+  computed: {
+    user () {
+        return this.$store.getters.userProfile
+    },
+
+    alert () {
+        return this.$store.getters.loadedAlert
+    },
+  }
 };
 </script>

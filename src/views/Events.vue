@@ -68,7 +68,7 @@
                                     <v-text-field :rules="sdrules" v-model="sdomain" label="URL"></v-text-field>
                                 </v-col>
                                 <v-col cols="6">
-                                    <h4>.you2live.in</h4>
+                                    <h4>.you2live.com</h4>
                                 </v-col>
                                 <v-col cols="6">
                                     <v-checkbox v-model="recording" label="Recording"></v-checkbox>
@@ -240,11 +240,12 @@ import 'firebase/auth'
                 var url = `https://${this.sdomain}.you2live.com/live/${rString}/index.m3u8`
                 await firebase.database().ref(`events/${this.uid}`).push(event)
                 await firebase.database().ref(`streams/${this.sdomain}`).set({url:url})
+                this.$store.dispatch('getEvents', this.uid)
+                this.$store.dispatch('createAlert',{type: 'success', message: 'Event created'})
                 this.close()                
             },
 
             async uploadImg() {
-
                 if(this.top != null) {
                     this.uploading = true
                     firebase.storage().ref(`images/${this.sdomain}/top`).put(this.top)
