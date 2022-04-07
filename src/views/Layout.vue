@@ -41,6 +41,9 @@
                 <div class="pa-2">
                     <v-switch label="Dark mode" v-model="$vuetify.theme.dark"></v-switch>
                 </div>
+                <div class="pa-2">
+                    <v-btn color="orange" @click="logout">Logout</v-btn>
+                </div>
             </template>
         </v-navigation-drawer>
         <v-main>
@@ -51,11 +54,17 @@
 </template>
 
 <script>
-
+import firebase from 'firebase/app'
+import 'firebase/auth'
 export default {
   data: () => ({
     drawer: true,
   }),
+  methods: {
+    logout () {
+        firebase.auth().signOut()
+    }
+  },
   computed: {
     user () {
         return this.$store.getters.userProfile
