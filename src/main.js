@@ -32,6 +32,6 @@ new Vue({
             else {
               store.commit('SET_LOGGED_IN', false) 
             }
-          })
+        })
     }
 }).$mount('#app')

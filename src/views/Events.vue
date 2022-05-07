@@ -71,7 +71,7 @@
                                     <h4>.you2live.com</h4>
                                 </v-col>
                                 <v-col cols="6">
-                                    <v-checkbox v-model="recording" label="Recording"></v-checkbox>
+                                    <v-checkbox disabled v-model="recording" label="Recording"></v-checkbox>
                                 </v-col>
                                 <v-col cols="6">
                                     <v-select v-model="sduration" :disabled="!recording" label="Storage duration" :items="sdays"></v-select>
@@ -92,7 +92,7 @@
                 <v-data-table
                 :headers="headers"
                 :items="events">
-                        <template v-slot:[`item.actions`]="{ item }">
+                    <template v-slot:[`item.actions`]="{ item }">
                         <v-icon
                             small
                             color="orange"
@@ -114,6 +114,7 @@
                 <v-card>
                     <v-toolbar>
                         <h3 class="pl-3">{{ename}}</h3>
+                        <v-btn @click="startServer" class="ml-5" color="primary" v-if="evenT.status == 'Inactive'">Start server</v-btn>
                         <v-spacer></v-spacer>
                         <v-btn  @click="dialog1 = false" small icon>
                             <v-icon class="red--text">mdi-close</v-icon>
@@ -121,11 +122,11 @@
                     </v-toolbar>
                     <v-card-text>
                         <v-container>
-                            <v-row>
+                            <v-row v-if="evenT.status == 'Active'">
                                 <table>
                                     <tr>
                                         <td>Uplink:</td>
-                                        <td class="pa-3">rtmp://{{sdomain}}.you2live.com/live</td>
+                                        <td class="pa-3">rtmp://{{sdomain}}.avmediawork.in:{{port}}/live</td>
                                     </tr>
                                     <tr>
                                         <td>Stream link:</td>
@@ -174,9 +175,11 @@ import firebase from 'firebase/app'
 import 'firebase/storage'
 import 'firebase/database'
 import 'firebase/auth'
+import axios from 'axios'
     export default {
         data: () => ({
             snackbar: false,
+            port: '',
             snack: '',
             scolor: '',
             dialog: false,
@@ -190,11 +193,11 @@ import 'firebase/auth'
             headers: [
                 {text: 'Event name', value: 'ename'},
                 {text: 'Event Date', value: 'efrom'},
-                {text: 'Stream key', value: 'streamkey'},
+                {text: 'Status', value: 'status'},
                 { text: 'Actions', value: 'actions'},
             ],
             rules: [
-                value => !value || value.size < 200000 || 'Avatar size should be less than 200 KB!',
+                value => !value || value.size < 200000 || 'Image size should be less than 200 KB!',
             ],
             sdays: ['30days', '60days', '90days'],
             ename: '',
@@ -208,7 +211,9 @@ import 'firebase/auth'
             fmenu: false,
             tmenu: false,
             loading: false,
-            uploading: false
+            uploading: false,
+            responce: {},
+            evenT: {} 
         }),
         methods: {
             newEvent() {
@@ -224,6 +229,23 @@ import 'firebase/auth'
                 this.recording = false
                 this.loading = false
             },
+            startServer () {
+                let payload = JSON.stringify({name: this.evenT.sdomain, type: 'basic-server'})
+                axios.post('https://apis.avmediawork.in/create', payload, {
+                    headers: {'Content-Type': 'application/json'}
+                })
+                .then((responce) => {
+                    this.responce = responce.data
+                    this.port = responce.data.spec.ports[0].nodePort
+                    var url = `https://hls-${this.evenT.sdomain}.you2live.com/live/${this.evenT.streamkey}/index.m3u8`
+                    firebase.database().ref(`streams/${this.evenT.sdomain}`).set({url:url})
+                    firebase.database().ref(`events/${this.uid}/${this.evenT.eid}/status`).update({status: 'Active'})
+                    .then(() => this.evenT.status = 'Active')
+                })
+                .catch((err) => {
+                    console.log(err.message)
+                })
+            },
             async createEvent() {
                 var rString = this.randomString(7, '0123456789abcdefghijklmnopqrstuvwxyz');
                 this.loading = true
@@ -235,11 +257,12 @@ import 'firebase/auth'
                     sdomain: this.sdomain,
                     recording: this.recording,
                     sduration: this.sduration,
-                    streamkey: rString
+                    streamkey: rString,
+                    status: 'Inactive'
                 }
-                var url = `https://${this.sdomain}.you2live.com/live/${rString}/index.m3u8`
+                //var url = `https://${this.sdomain}.you2live.com/live/${rString}/index.m3u8`
                 await firebase.database().ref(`events/${this.uid}`).push(event)
-                await firebase.database().ref(`streams/${this.sdomain}`).set({url:url})
+                //await firebase.database().ref(`streams/${this.sdomain}`).set({url:url})
                 this.$store.dispatch('getEvents', this.uid)
                 this.$store.dispatch('createAlert',{type: 'success', message: 'Event created'})
                 this.close()                
@@ -296,7 +319,8 @@ import 'firebase/auth'
                             sduration: dat[i].sduration,
                             recording: dat[i].recording,
                             sdomain: dat[i].sdomain,
-                            streamkey: dat[i].streamkey
+                            streamkey: dat[i].streamkey,
+                            status: dat[i].status
                         })
                     }
                 })
@@ -307,6 +331,21 @@ import 'firebase/auth'
                 this.sdomain = item.sdomain
                 this.streamkey = item.streamkey
                 this.ename = item.ename
+                this.evenT = item
+                if(item.status == 'Active') {
+                    let payload = JSON.stringify({name: item.sdomain, type: 'basic-server'})
+                    console.log(payload);
+                    axios.post('https://apis.avmediawork.in/test', payload, {
+                        headers: {'Content-Type': 'application/json'}
+                    })
+                    .then((responce) => {
+                        this.responce = responce.data
+                        this.port = responce.data.spec.ports[0].nodePort
+                    })
+                    .catch((err) => {
+                        console.log(err.message)
+                    })
+                }
             }
         },
         computed: {
