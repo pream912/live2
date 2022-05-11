@@ -237,7 +237,7 @@ import axios from 'axios'
                 .then((responce) => {
                     this.responce = responce.data
                     this.port = responce.data.spec.ports[0].nodePort
-                    var url = `https://hls-${this.evenT.sdomain}.you2live.com/live/${this.evenT.streamkey}/index.m3u8`
+                    var url = `https://hls-${this.evenT.sdomain}.avmediawork.in/live/${this.evenT.streamkey}/index.m3u8`
                     firebase.database().ref(`streams/${this.evenT.sdomain}`).set({url:url})
                     firebase.database().ref(`events/${this.uid}/${this.evenT.eid}`).update({status: 'Active'})
                     .then(() => this.evenT.status = 'Active')
