@@ -97,10 +97,18 @@
                             small
                             color="orange"
                             class="mr-2"
+                        >
+                            mdi-pencil
+                        </v-icon>
+                        <v-icon
+                            small
+                            color="green"
+                            class="mr-2"
                             @click="openEvent(item)"
                         >
                             mdi-wrench
                         </v-icon>
+                        <v-btn v-if="item.status == 'Inactive' && item.payment == 'Paid'" color="green" small>Start server</v-btn>
                     </template>
                 </v-data-table>
             </v-col>
@@ -193,8 +201,10 @@ import axios from 'axios'
             headers: [
                 {text: 'Event name', value: 'ename'},
                 {text: 'Event Date', value: 'efrom'},
+                {text: 'Payment', value: 'payment'},
+                {text: 'Stream', value: 'stream'},
                 {text: 'Status', value: 'status'},
-                { text: 'Actions', value: 'actions'},
+                {text: 'Actions', value: 'actions'},
             ],
             rules: [
                 value => !value || value.size < 200000 || 'Image size should be less than 200 KB!',
@@ -239,8 +249,8 @@ import axios from 'axios'
                     this.port = responce.data.spec.ports[0].nodePort
                     var url = `https://hls-${this.evenT.sdomain}.avmediawork.in/live/${this.evenT.streamkey}/index.m3u8`
                     firebase.database().ref(`streams/${this.evenT.sdomain}`).set({url:url})
-                    firebase.database().ref(`events/${this.uid}/${this.evenT.eid}`).update({status: 'Active'})
-                    .then(() => this.evenT.status = 'Active')
+                    firebase.database().ref(`events/${this.uid}/${this.evenT.eid}`).update({status: 'Server running'})
+                    .then(() => this.evenT.status = 'Server running')
                 })
                 .catch((err) => {
                     console.log(err.message)
@@ -307,23 +317,7 @@ import axios from 'axios'
             },
 
             getEvents() {
-                firebase.database().ref(`events/${this.uid}`).get('once').then((data) => {
-                    var dat = data.val()
-                    for(let i in dat) {
-                        this.$store.commit('ADD_EVENT', {
-                            eid: i,
-                            ename: dat[i].ename,
-                            edescription: dat[i].edescription,
-                            eto: dat[i].eto,
-                            efrom: dat[i].efrom,
-                            sduration: dat[i].sduration,
-                            recording: dat[i].recording,
-                            sdomain: dat[i].sdomain,
-                            streamkey: dat[i].streamkey,
-                            status: dat[i].status
-                        })
-                    }
-                })
+                this.$store.dispatch('getEvents', this.uid)
             },
 
             openEvent(item) {

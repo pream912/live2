@@ -54,15 +54,16 @@ export default new Vuex.Store({
         let events = []
         for(let i in dat) {
             events.push({
-                eid: i,
-                ename: dat[i].ename,
-                edescription: dat[i].edescription,
-                eto: dat[i].eto,
-                efrom: dat[i].efrom,
-                sduration: dat[i].sduration,
-                recording: dat[i].recording,
-                sdomain: dat[i].sdomain,
-                streamkey: dat[i].streamkey
+              eid: i,
+              ename: dat[i].ename,
+              edescription: dat[i].edescription,
+              eto: dat[i].eto,
+              efrom: dat[i].efrom,
+              sduration: dat[i].sduration,
+              recording: dat[i].recording,
+              sdomain: dat[i].sdomain,
+              streamkey: dat[i].streamkey,
+              status: dat[i].status
             })
         }
         commit('SET_EVENT', events)
