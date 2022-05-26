@@ -2,6 +2,7 @@
     <v-container>
         <v-row class="pa-3">
             <v-btn color="primary" @click="newEvent">Create Event</v-btn>
+            <v-btn color="primary" @click="getStream">get stream</v-btn>
             <v-dialog v-model="dialog"
             persistent
             max-width="750px">
@@ -26,7 +27,7 @@
                                         min-width="290px"
                                     >
                                         <template v-slot:activator="{ on, attrs }">
-                                        <v-text-field 
+                                        <v-text-field
                                         v-model="efrom"
                                         label="From"
                                         v-bind="attrs"
@@ -47,11 +48,11 @@
                                         min-width="290px"
                                     >
                                         <template v-slot:activator="{ on }">
-                                        <v-text-field 
+                                        <v-text-field
                                         v-model="eto"
                                         label="To"
                                         v-on="on"
-                                        
+
                                         readonly
                                         ></v-text-field>
                                         </template>
@@ -94,6 +95,7 @@
                 :items="events">
                     <template v-slot:[`item.actions`]="{ item }">
                         <v-icon
+                            v-if="item.status == 'Inactive'"
                             small
                             color="orange"
                             class="mr-2"
@@ -108,21 +110,21 @@
                         >
                             mdi-wrench
                         </v-icon>
-                        <v-btn v-if="item.status == 'Inactive' && item.payment == 'Paid'" color="green" small>Start server</v-btn>
+                        <v-btn @click="startServer(item)" v-if="item.status == 'Inactive' && item.payment == 'Paid'" color="green" small>Start server</v-btn>
                     </template>
                 </v-data-table>
             </v-col>
         </v-row>
         <v-row>
-            <v-dialog 
-            v-model="dialog1" 
+            <v-dialog
+            v-model="dialog1"
             fullscreen
             hide-overlay
             transition="dialog-bottom-transition">
                 <v-card>
                     <v-toolbar>
                         <h3 class="pl-3">{{ename}}</h3>
-                        <v-btn @click="startServer" class="ml-5" color="primary" v-if="evenT.status == 'Inactive'">Start server</v-btn>
+                        <v-btn @click="startServer" class="ml-5" color="primary" v-if="evenT.payment == 'Paid' && evenT.status == 'Inactive'">Start server</v-btn>
                         <v-spacer></v-spacer>
                         <v-btn  @click="dialog1 = false" small icon>
                             <v-icon class="red--text">mdi-close</v-icon>
@@ -130,7 +132,7 @@
                     </v-toolbar>
                     <v-card-text>
                         <v-container>
-                            <v-row v-if="evenT.status == 'Active'">
+                            <v-row v-if="evenT.status != 'Inactive'">
                                 <table>
                                     <tr>
                                         <td>Uplink:</td>
@@ -175,6 +177,23 @@
                 {{snack}}
             </v-snackbar>
         </v-row>
+        <v-row>
+            <v-dialog
+            v-model="serloading"
+            hide-overlay
+            persistent
+            width="300">
+                <v-card>
+                    <v-card-text>
+                        Provisioning your server, please stand by...
+                        <v-progress-linear
+                        indeterminate
+                        color="white"
+                        class="mb-0"></v-progress-linear>
+                    </v-card-text>
+                </v-card>
+            </v-dialog>
+        </v-row>
     </v-container>
 </template>
 
@@ -192,6 +211,7 @@ import axios from 'axios'
             scolor: '',
             dialog: false,
             dialog1: false,
+            serloading: false,
             sdomain: '',
             streamkey: '',
             sdrules: [
@@ -223,7 +243,7 @@ import axios from 'axios'
             loading: false,
             uploading: false,
             responce: {},
-            evenT: {} 
+            evenT: {}
         }),
         methods: {
             newEvent() {
@@ -239,21 +259,36 @@ import axios from 'axios'
                 this.recording = false
                 this.loading = false
             },
-            startServer () {
-                let payload = JSON.stringify({name: this.evenT.sdomain, type: 'basic-server'})
+            getStream () {
+                axios.get('https://hls-arrpeggio.avmediawork.in/api/streams')
+                .then((responce) => {
+                    console.log(responce.data.live)
+                    let stream = responce.data.live
+                    let publisher = stream.p12w3vs.publisher
+                    let subs = stream.p12w3vs.subscribers
+                    console.log(publisher)
+                    console.log(subs)
+                })
+            },
+            startServer (item) {
+                this.serloading = true
+                let payload = JSON.stringify({name: item.sdomain, type: 'basic-server'})
                 axios.post('https://apis.avmediawork.in/create', payload, {
                     headers: {'Content-Type': 'application/json'}
                 })
                 .then((responce) => {
                     this.responce = responce.data
                     this.port = responce.data.spec.ports[0].nodePort
-                    var url = `https://hls-${this.evenT.sdomain}.avmediawork.in/live/${this.evenT.streamkey}/index.m3u8`
-                    firebase.database().ref(`streams/${this.evenT.sdomain}`).set({url:url})
-                    firebase.database().ref(`events/${this.uid}/${this.evenT.eid}`).update({status: 'Server running'})
-                    .then(() => this.evenT.status = 'Server running')
+                    var url = `https://hls-${item.sdomain}.avmediawork.in/live/${item.streamkey}/index.m3u8`
+                    firebase.database().ref(`streams/${item.sdomain}`).set({url:url})
+                    firebase.database().ref(`events/${this.uid}/${item.eid}`).update({status: 'Server running'})
+                    .then(() => this.$store.dispatch('getEvents', this.uid))
+                    this.serloading = false
+                    this.$store.dispatch('createAlert',{type: 'success', message: 'Server created'})
                 })
                 .catch((err) => {
-                    console.log(err.message)
+                    this.$store.dispatch('createAlert',{type: 'error', message: err.message})
+                    this.serloading = false
                 })
             },
             async createEvent() {
@@ -268,14 +303,15 @@ import axios from 'axios'
                     recording: this.recording,
                     sduration: this.sduration,
                     streamkey: rString,
-                    status: 'Inactive'
+                    status: 'Inactive',
+                    payment: 'Paid'
                 }
                 //var url = `https://${this.sdomain}.you2live.com/live/${rString}/index.m3u8`
                 await firebase.database().ref(`events/${this.uid}`).push(event)
                 //await firebase.database().ref(`streams/${this.sdomain}`).set({url:url})
                 this.$store.dispatch('getEvents', this.uid)
                 this.$store.dispatch('createAlert',{type: 'success', message: 'Event created'})
-                this.close()                
+                this.close()
             },
 
             async uploadImg() {
@@ -283,7 +319,7 @@ import axios from 'axios'
                     this.uploading = true
                     firebase.storage().ref(`images/${this.sdomain}/top`).put(this.top)
                     .then((fileData) => {
-                        return firebase.storage().ref(fileData.metadata.fullPath).getDownloadURL()  
+                        return firebase.storage().ref(fileData.metadata.fullPath).getDownloadURL()
                     })
                     .then((url) => {
                         firebase.database().ref(`streams/${this.sdomain}/top`).set(url)
@@ -298,7 +334,7 @@ import axios from 'axios'
                     this.uploading = true
                     firebase.storage().ref(`images/${this.sdomain}/bottom`).put(this.bottom)
                     .then((fileData) => {
-                        return firebase.storage().ref(fileData.metadata.fullPath).getDownloadURL()  
+                        return firebase.storage().ref(fileData.metadata.fullPath).getDownloadURL()
                     })
                     .then((url) => {
                         firebase.database().ref(`streams/${this.sdomain}/bottom`).set(url)
@@ -326,7 +362,7 @@ import axios from 'axios'
                 this.streamkey = item.streamkey
                 this.ename = item.ename
                 this.evenT = item
-                if(item.status == 'Active') {
+                if(item.status != 'Inactive') {
                     let payload = JSON.stringify({name: item.sdomain, type: 'basic-server'})
                     console.log(payload);
                     axios.post('https://apis.avmediawork.in/test', payload, {

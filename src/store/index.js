@@ -63,7 +63,8 @@ export default new Vuex.Store({
               recording: dat[i].recording,
               sdomain: dat[i].sdomain,
               streamkey: dat[i].streamkey,
-              status: dat[i].status
+              status: dat[i].status,
+              payment: dat[i].payment
             })
         }
         commit('SET_EVENT', events)
