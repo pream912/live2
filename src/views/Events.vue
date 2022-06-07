@@ -2,7 +2,7 @@
     <v-container>
         <v-row class="pa-3">
             <v-btn color="primary" @click="newEvent">Create Event</v-btn>
-            <v-btn color="primary" @click="getStream">get stream</v-btn>
+            <v-btn color="primary" @click="listEvents">get stream</v-btn>
             <v-dialog v-model="dialog"
             persistent
             max-width="750px">
@@ -92,7 +92,7 @@
             <v-col cols="12">
                 <v-data-table
                 :headers="headers"
-                :items="events">
+                :items="eveList">
                     <template v-slot:[`item.actions`]="{ item }">
                         <v-icon
                             v-if="item.status == 'Inactive'"
@@ -111,6 +111,10 @@
                             mdi-wrench
                         </v-icon>
                         <v-btn @click="startServer(item)" v-if="item.status == 'Inactive' && item.payment == 'Paid'" color="green" small>Start server</v-btn>
+                    </template>
+                    <template v-slot:[`item.live`]="{ item }">
+                        <v-btn text v-if="item.live" color="green" small>Live</v-btn>
+                        <p v-else>-</p>
                     </template>
                 </v-data-table>
             </v-col>
@@ -194,10 +198,28 @@
                 </v-card>
             </v-dialog>
         </v-row>
+        <v-row>
+            <v-dialog v-model="viddialog" max-width="600px"> 
+                <v-card>
+                    <video-player class="player"
+                    ref="videoPlayer"
+                    :options="playerOps"
+                    @ready="onPlayerReady"
+                    @suspend="suspended($event)"
+                    >
+                    </video-player>
+                </v-card>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn @click="viddialog = false" color="Red">Close</v-btn>
+                </v-card-actions>
+            </v-dialog>
+        </v-row>
     </v-container>
 </template>
 
 <script>
+import {videoPlayer} from 'vue-videojs7'
 import firebase from 'firebase/app'
 import 'firebase/storage'
 import 'firebase/database'
@@ -205,6 +227,7 @@ import 'firebase/auth'
 import axios from 'axios'
     export default {
         data: () => ({
+            viddialog: false,
             snackbar: false,
             port: '',
             snack: '',
@@ -222,7 +245,7 @@ import axios from 'axios'
                 {text: 'Event name', value: 'ename'},
                 {text: 'Event Date', value: 'efrom'},
                 {text: 'Payment', value: 'payment'},
-                {text: 'Stream', value: 'stream'},
+                {text: 'Stream', value: 'live'},
                 {text: 'Status', value: 'status'},
                 {text: 'Actions', value: 'actions'},
             ],
@@ -232,6 +255,7 @@ import axios from 'axios'
             sdays: ['30days', '60days', '90days'],
             ename: '',
             edescription: '',
+            eveList: [],
             efrom: null,
             eto: null,
             top: null,
@@ -243,7 +267,18 @@ import axios from 'axios'
             loading: false,
             uploading: false,
             responce: {},
-            evenT: {}
+            evenT: {},
+            refresh: null,
+            playerOps: {
+                autoplay: true,
+                html5: {
+                    hls: {
+                        overrideNative: true
+                    },
+                    nativeAudioTracks: false,
+                    nativeVideoTracks: false,
+                }
+            },
         }),
         methods: {
             newEvent() {
@@ -259,16 +294,64 @@ import axios from 'axios'
                 this.recording = false
                 this.loading = false
             },
-            getStream () {
-                axios.get('https://hls-arrpeggio.avmediawork.in/api/streams')
-                .then((responce) => {
-                    console.log(responce.data.live)
-                    let stream = responce.data.live
-                    let publisher = stream.p12w3vs.publisher
-                    let subs = stream.p12w3vs.subscribers
-                    console.log(publisher)
-                    console.log(subs)
-                })
+            async listEvents () {
+                this.eveList = []
+                let events = this.events
+                for(let i in events) {
+                    let url = `https://hls-${events[i].sdomain}.avmediawork.in/api/streams`
+                    let stat = await this.getStream(url)
+                    let list = {
+                        eid: events[i].eid,
+                        ename: events[i].ename,
+                        edescription: events[i].edescription,
+                        eto: events[i].eto,
+                        efrom: events[i].efrom,
+                        sduration: events[i].sduration,
+                        recording: events[i].recording,
+                        sdomain: events[i].sdomain,
+                        streamkey: events[i].streamkey,
+                        status: events[i].status,
+                        payment: events[i].payment,
+                        live: stat.live,
+                        stream: `https://hls-${events[i].sdomain}.avmediawork.in/live/${events[i].streamkey}/index.m3u8`
+                    }
+                    this.eveList.push(list)
+                }
+            },
+            async refreshEvents () {
+                let events = this.events
+                for(let i in events) {
+                    let url = `https://hls-${events[i].sdomain}.avmediawork.in/api/streams`
+                    let stat = await this.getStream(url)
+                    this.eveList[i].live = stat.live
+                }
+            },
+            async getStream (url) {
+                let responce = await axios.get(url)
+                let dat = Object.values(responce.data)
+                if (dat.length > 0) {
+                    let stream = Object.values(responce.data.live)
+                    let publisher = stream[0].publisher
+                    let subs = stream[0].subscribers
+                    let rtmpCon = subs.filter((con) => {
+                        return con.protocol = 'rtmp'
+                    })
+                    let live = false
+                    if(publisher) {
+                        live = true
+                    }
+                    return {
+                        live: live,
+                        rtmpCon: rtmpCon.length
+                    }
+                }
+                else {
+                    return {
+                        live: false,
+                        rtmpCon: false
+                    }
+                }
+                
             },
             startServer (item) {
                 this.serloading = true
@@ -364,7 +447,6 @@ import axios from 'axios'
                 this.evenT = item
                 if(item.status != 'Inactive') {
                     let payload = JSON.stringify({name: item.sdomain, type: 'basic-server'})
-                    console.log(payload);
                     axios.post('https://apis.avmediawork.in/test', payload, {
                         headers: {'Content-Type': 'application/json'}
                     })
@@ -376,7 +458,23 @@ import axios from 'axios'
                         console.log(err.message)
                     })
                 }
-            }
+            },
+
+            onPlayerReady () {
+                this.player.fill(true)
+            },
+
+            playVideo(source) {
+                this.viddialog = true
+                const video = {
+                    withCredentials: false,
+                    type: 'application/x-mpegURL',
+                    src: source
+                }
+                this.player.reset() // in IE11 (mode IE10) direct usage of src() when <src> is already set, generated errors,
+                this.player.src(video)
+                this.player.load()
+            },
         },
         computed: {
             min () {
@@ -393,7 +491,14 @@ import axios from 'axios'
             },
             uid () {
                 return firebase.auth().currentUser.uid
+            },
+            player () {
+                return this.$refs.videoPlayer.player
             }
+        },
+
+        components: {
+            videoPlayer
         },
 
         mounted() {
@@ -401,6 +506,21 @@ import axios from 'axios'
             if (events.length <= 0) {
                 this.getEvents()
             }
+            this.listEvents()
+            this.refresh = setInterval(() => {
+                this.refreshEvents()
+            }, 10000)
+        },
+
+        beforeDestroy () {
+            clearInterval(this.refresh)
         }
     };
 </script>
+
+<style scoped>
+    .player {
+        height: 400px;
+        position: relative;
+    }
+</style>

@@ -1,5 +1,5 @@
 <template>
-    <v-container>
+    <v-container fluid style="height:100%; background-repeat: repeat; background-color: black;" :style="{'background-image': 'url(' + require('../assets/bg.png') + ')'}">
         <v-snackbar
         :timeout="3000"
         :value="snack"
@@ -11,38 +11,45 @@
         >
             {{stext}}
         </v-snackbar>
-        <v-row class="ma-10">
-            <v-col align="center" cols="12">
-                <v-card v-if="!reg" elevation="10" max-width="800px">
-                    <v-card-title>Login</v-card-title>
-                    <v-card-text>
-                        <v-text-field v-model="email" :rules="emailRules" label="Email" ></v-text-field>
-                        <v-text-field v-model="password" type="password" label="Password"></v-text-field>
-                    </v-card-text>
-                    <v-card-actions>
-                        <v-btn :loading="loading" @click="login" color="primary">Login</v-btn>
-                        <v-spacer></v-spacer>
-                        <v-btn text @click="reg = !reg" color="green">Signup</v-btn>
-                    </v-card-actions>
-                </v-card>
-                <v-card v-else elevation="10" max-width="800px">
-                    <v-form ref="signup" v-model="valid">
-                        <v-card-title>Signup</v-card-title>
-                        <v-card-text>
-                            <v-text-field v-model="name" :rules="[v => !!v || 'Name is required']" label="Name" ></v-text-field>
-                            <v-text-field v-model="email" :rules="emailRules" label="Email" ></v-text-field>
-                            <v-text-field v-model="phone" :rules="phoneRules" label="Mobile No." ></v-text-field>
-                            <v-text-field v-model="password" type="password" label="Password"></v-text-field>
-                            <v-text-field v-model="rpassword" :rules="passMatch" type="password" label="Repeat Password"></v-text-field>
-                        </v-card-text>
-                        <v-card-actions>
-                            <v-btn :loading="loading" :disabled="!valid" @click="signup" color="primary">Submit</v-btn>
-                            <v-spacer></v-spacer>
-                            <v-btn text @click="reg = !reg" color="green">Login</v-btn>
-                        </v-card-actions>
-                    </v-form>
-                </v-card>
-            </v-col>
+        <v-row align="center" justify="space-around" style="height:100%">
+            <v-card class="ma-10 rounded-xl" color="white" elevation="7" max-width="1200px">
+                <v-row>
+                    <v-col md="12" xs="12" justify="space-around" align="center">
+                        <v-img max-width="300" :src="require('../assets/y2l_logo.png')"></v-img>
+                    </v-col>
+                    <v-col class="px-10 pb-10" md="12" xs="12" align="center" max-width="800px">
+                        <v-card class="rounded-xl" v-if="!reg" elevation="10" color="#761287">
+                            <v-card-title>Login</v-card-title>
+                            <v-card-text>
+                                <v-text-field prepend-inner-icon="mdi-email" v-model="email" :rules="emailRules" label="Email" ></v-text-field>
+                                <v-text-field prepend-inner-icon="mdi-lock" v-model="password" type="password" label="Password"></v-text-field>
+                            </v-card-text>
+                            <v-card-actions>
+                                <v-btn rounded :loading="loading" @click="login" color="#3406ad">Login</v-btn>
+                                <v-spacer></v-spacer>
+                                <v-btn text @click="reg = !reg" color="green">Go to Signup</v-btn>
+                            </v-card-actions>
+                        </v-card>
+                        <v-card v-else class="rounded-xl" color="#761287" elevation="10" max-width="800px">
+                            <v-form ref="signup" v-model="valid">
+                                <v-card-title>Signup</v-card-title>
+                                <v-card-text>
+                                    <v-text-field prepend-inner-icon="mdi-account" v-model="name" :rules="[v => !!v || 'Name is required']" label="Name" ></v-text-field>
+                                    <v-text-field prepend-inner-icon="mdi-email" v-model="email" :rules="emailRules" label="Email" ></v-text-field>
+                                    <v-text-field prepend-inner-icon="mdi-phone" v-model="phone" :rules="phoneRules" label="Mobile No." ></v-text-field>
+                                    <v-text-field prepend-inner-icon="mdi-lock" v-model="password" type="password" label="Password"></v-text-field>
+                                    <v-text-field prepend-inner-icon="mdi-lock" v-model="rpassword" :rules="passMatch" type="password" label="Repeat Password"></v-text-field>
+                                </v-card-text>
+                                <v-card-actions>
+                                    <v-btn :loading="loading" rounded :disabled="!valid" @click="signup" color="#3406ad">Submit</v-btn>
+                                    <v-spacer></v-spacer>
+                                    <v-btn text @click="reg = !reg" color="green">Go to Login</v-btn>
+                                </v-card-actions>
+                            </v-form>
+                        </v-card>
+                    </v-col>
+                </v-row>
+            </v-card>
         </v-row>
     </v-container>
 </template>
@@ -121,3 +128,9 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+    body {
+        background-color: black;
+    }
+</style>

@@ -13,9 +13,11 @@
         <v-navigation-drawer app absolute v-model="drawer">
             <v-list-item>
                 <v-list-item-content>
-                    <v-list-item-title class="text-h4">
+                    <!-- <v-list-item-title class="text-h4">
                         You-2-Live
-                    </v-list-item-title>
+                    </v-list-item-title> -->
+                    <v-img v-if="$vuetify.theme.dark" max-width="300" :src="require('../assets/y2l_logo_dark.png')"></v-img>
+                    <v-img v-else max-width="300" :src="require('../assets/y2l_logo.png')"></v-img>
                 </v-list-item-content>
             </v-list-item>
             <v-divider></v-divider>
