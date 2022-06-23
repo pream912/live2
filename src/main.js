@@ -28,6 +28,7 @@ new Vue({
             if(user) {
                 store.commit('SET_LOGGED_IN', true)
                 store.dispatch('getProfile', user.uid)
+                store.dispatch('getEvents', user.uid)
             }
             else {
               store.commit('SET_LOGGED_IN', false) 

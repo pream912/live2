@@ -2,7 +2,6 @@
     <v-container>
         <v-row class="pa-3">
             <v-btn color="primary" @click="newEvent">Create Event</v-btn>
-            <v-btn color="primary" @click="listEvents">get stream</v-btn>
             <v-dialog v-model="dialog"
             persistent
             max-width="750px">
@@ -91,6 +90,7 @@
         <v-row>
             <v-col cols="12">
                 <v-data-table
+                :loading="lisLoading"
                 :headers="headers"
                 :items="eveList">
                     <template v-slot:[`item.actions`]="{ item }">
@@ -198,28 +198,18 @@
                 </v-card>
             </v-dialog>
         </v-row>
-        <v-row>
-            <v-dialog v-model="viddialog" max-width="600px"> 
-                <v-card>
-                    <video-player class="player"
-                    ref="videoPlayer"
-                    :options="playerOps"
-                    @ready="onPlayerReady"
-                    @suspend="suspended($event)"
-                    >
-                    </video-player>
-                </v-card>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="viddialog = false" color="Red">Close</v-btn>
-                </v-card-actions>
-            </v-dialog>
-        </v-row>
+        <!-- <v-row>
+            <video
+            controls
+            preload="auto"
+            data-setup="{}">
+                <source src="https://hls-nweve.avmediawork.in/live/sim1alm/index.m3u8" type="application/x-mpegURL" />
+            </video>
+                </v-row> -->
     </v-container>
 </template>
 
 <script>
-import {videoPlayer} from 'vue-videojs7'
 import firebase from 'firebase/app'
 import 'firebase/storage'
 import 'firebase/database'
@@ -269,16 +259,6 @@ import axios from 'axios'
             responce: {},
             evenT: {},
             refresh: null,
-            playerOps: {
-                autoplay: true,
-                html5: {
-                    hls: {
-                        overrideNative: true
-                    },
-                    nativeAudioTracks: false,
-                    nativeVideoTracks: false,
-                }
-            },
         }),
         methods: {
             newEvent() {
@@ -459,22 +439,6 @@ import axios from 'axios'
                     })
                 }
             },
-
-            onPlayerReady () {
-                this.player.fill(true)
-            },
-
-            playVideo(source) {
-                this.viddialog = true
-                const video = {
-                    withCredentials: false,
-                    type: 'application/x-mpegURL',
-                    src: source
-                }
-                this.player.reset() // in IE11 (mode IE10) direct usage of src() when <src> is already set, generated errors,
-                this.player.src(video)
-                this.player.load()
-            },
         },
         computed: {
             min () {
@@ -492,13 +456,13 @@ import axios from 'axios'
             uid () {
                 return firebase.auth().currentUser.uid
             },
-            player () {
-                return this.$refs.videoPlayer.player
-            }
-        },
-
-        components: {
-            videoPlayer
+            lisLoading () {
+                if(this.eveList.length <= 0) {
+                    return true
+                } else {
+                    return false
+                }
+            } 
         },
 
         mounted() {
@@ -507,11 +471,15 @@ import axios from 'axios'
                 this.getEvents()
             }
             this.listEvents()
+            setInterval(() => {
+                if(this.eveList.length <= 0) {
+                    this.listEvents()
+                }
+            }, 5000)
             this.refresh = setInterval(() => {
                 this.refreshEvents()
             }, 10000)
         },
-
         beforeDestroy () {
             clearInterval(this.refresh)
         }
@@ -519,8 +487,5 @@ import axios from 'axios'
 </script>
 
 <style scoped>
-    .player {
-        height: 400px;
-        position: relative;
-    }
+
 </style>
