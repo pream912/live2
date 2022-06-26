@@ -1,16 +1,6 @@
 <template>
     <div>
-        <v-app-bar app>
-            <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-            <v-spacer></v-spacer>
-            <v-avatar>
-                <v-icon>
-                    mdi-account-circle
-                </v-icon>
-            </v-avatar>
-            <v-toolbar-title>{{user.name}}</v-toolbar-title>
-        </v-app-bar>
-        <v-navigation-drawer app absolute v-model="drawer">
+        <v-navigation-drawer app clipped v-model="drawer">
             <v-list-item>
                 <v-list-item-content>
                     <!-- <v-list-item-title class="text-h4">
@@ -48,6 +38,17 @@
                 </div>
             </template>
         </v-navigation-drawer>
+        <v-app-bar app clipped-left>
+            <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+            <v-toolbar-title>You<span class="red--text">2</span>Live.com</v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-avatar>
+                <v-icon>
+                    mdi-account-circle
+                </v-icon>
+            </v-avatar>
+            <v-toolbar-title>{{user.name}}</v-toolbar-title>
+        </v-app-bar>
         <v-main>
             <v-alert :value="alert.alert" :type="alert.type">{{alert.message}}</v-alert>
             <router-view/>

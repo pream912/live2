@@ -139,16 +139,22 @@
                             <v-row v-if="evenT.status != 'Inactive'">
                                 <table>
                                     <tr>
-                                        <td>Uplink:</td>
-                                        <td class="pa-3">rtmp://{{sdomain}}.avmediawork.in:{{port}}/live</td>
+                                        <td>Stream link:</td>
+                                        <td class="pa-3">https://{{sdomain}}.you2live.com
+                                            <v-btn small icon @click="shareURL(`https://${sdomain}.you2live.com`)"> <v-icon> mdi-share-variant </v-icon> </v-btn>
+                                        </td>
                                     </tr>
                                     <tr>
-                                        <td>Stream link:</td>
-                                        <td class="pa-3">https://{{sdomain}}.you2live.com</td>
+                                        <td>Uplink:</td>
+                                        <td class="pa-3">rtmp://{{sdomain}}.avmediawork.in:{{port}}/live
+                                            <v-btn small icon @click="copyTXT(`rtmp://${sdomain}.avmediawork.in:${port}/live`)"> <v-icon> mdi-clipboard-text-multiple </v-icon> </v-btn>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td>Stream key:</td>
-                                        <td class="pa-3">{{streamkey}}</td>
+                                        <td class="pa-3">{{streamkey}}
+                                            <v-btn icon small @click="copyTXT(`${streamkey}`)"> <v-icon> mdi-clipboard-text-multiple </v-icon> </v-btn>
+                                        </td>
                                     </tr>
                                 </table>
                             </v-row>
@@ -261,6 +267,17 @@ import axios from 'axios'
             refresh: null,
         }),
         methods: {
+            shareURL(url) {
+                navigator.share({
+                    url: url
+                })
+            },
+            copyTXT(txt) {
+                navigator.clipboard.writeText(txt)
+                .then(() => {
+                    this.$store.dispatch('createAlert',{type: 'success', message: 'Copied'})
+                })
+            },
             newEvent() {
                 this.dialog = true
             },

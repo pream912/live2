@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
+//import Home from '../views/Home.vue'
 import Events from '../views/Events.vue'
 import Profile from '../views/Profile.vue'
 import Video from '../views/Video.vue'
@@ -10,7 +10,7 @@ Vue.use(VueRouter)
 const routes = [
   {
     path: '/',
-    component: Home
+    component: Events
   },
   {
     path: '/events',
