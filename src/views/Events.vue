@@ -296,7 +296,10 @@ import axios from 'axios'
                 let events = this.events
                 for(let i in events) {
                     let url = `https://hls-${events[i].sdomain}.avmediawork.in/api/streams`
-                    let stat = await this.getStream(url)
+                    let stat = false
+                    if(events[i].status == 'Server running') {
+                        stat = await this.getStream(url)
+                    }
                     let list = {
                         eid: events[i].eid,
                         ename: events[i].ename,
@@ -318,9 +321,11 @@ import axios from 'axios'
             async refreshEvents () {
                 let events = this.events
                 for(let i in events) {
-                    let url = `https://hls-${events[i].sdomain}.avmediawork.in/api/streams`
-                    let stat = await this.getStream(url)
-                    this.eveList[i].live = stat.live
+                    if(events[i].status == 'Server running') {
+                        let url = `https://hls-${events[i].sdomain}.avmediawork.in/api/streams`
+                        let stat = await this.getStream(url)
+                        this.eveList[i].live = stat.live
+                    }
                 }
             },
             async getStream (url) {
