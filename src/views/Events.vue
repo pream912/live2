@@ -365,7 +365,12 @@ import axios from 'axios'
                     this.responce = responce.data
                     this.port = responce.data.spec.ports[0].nodePort
                     var url = `https://hls-${item.sdomain}.avmediawork.in/live/${item.streamkey}/index.m3u8`
-                    firebase.database().ref(`streams/${item.sdomain}`).set({url:url})
+                    firebase.database().ref(`streams/${item.sdomain}`).set({
+                        url: url,
+                        stname: this.user.name,
+                        logo: this.user.logo,
+                        phone: this.user.phone
+                    })
                     firebase.database().ref(`events/${this.uid}/${item.eid}`).update({status: 'Server running'})
                     .then(() => this.$store.dispatch('getEvents', this.uid))
                     this.serloading = false
@@ -484,7 +489,10 @@ import axios from 'axios'
                 } else {
                     return false
                 }
-            } 
+            },
+            user () {
+            return this.$store.getters.userProfile
+        }
         },
 
         mounted() {
