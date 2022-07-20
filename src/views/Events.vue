@@ -92,7 +92,7 @@
                 <v-data-table
                 :loading="lisLoading"
                 :headers="headers"
-                :items="eveList">
+                :items="events">
                     <template v-slot:[`item.actions`]="{ item }">
                         <v-icon
                             v-if="item.status == 'Inactive'"
@@ -500,15 +500,15 @@ import axios from 'axios'
             if (events.length <= 0) {
                 this.getEvents()
             }
-            this.listEvents()
-            setInterval(() => {
-                if(this.eveList.length <= 0) {
-                    this.listEvents()
-                }
-            }, 5000)
-            this.refresh = setInterval(() => {
-                this.refreshEvents()
-            }, 10000)
+            // this.listEvents()
+            // setInterval(() => {
+            //     if(this.eveList.length <= 0) {
+            //         this.listEvents()
+            //     }
+            // }, 5000)
+            // this.refresh = setInterval(() => {
+            //     this.refreshEvents()
+            // }, 10000)
         },
         beforeDestroy () {
             clearInterval(this.refresh)
