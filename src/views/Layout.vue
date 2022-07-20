@@ -57,15 +57,14 @@
 </template>
 
 <script>
-import firebase from 'firebase/app'
-import 'firebase/auth'
+import {supabase} from '../supabase'
 export default {
   data: () => ({
     drawer: true,
   }),
   methods: {
     logout () {
-        firebase.auth().signOut()
+        supabase.auth.signOut()
     }
   },
   computed: {

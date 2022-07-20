@@ -216,6 +216,7 @@
 </template>
 
 <script>
+import {supabase} from '../supabase'
 import firebase from 'firebase/app'
 import 'firebase/storage'
 import 'firebase/database'
@@ -225,14 +226,14 @@ import axios from 'axios'
         data: () => ({
             viddialog: false,
             snackbar: false,
-            port: '',
+            port: null,
             snack: '',
             scolor: '',
             dialog: false,
             dialog1: false,
             serloading: false,
-            sdomain: '',
-            streamkey: '',
+            sdomain: null,
+            streamkey: null,
             sdrules: [
                 v => !!v || 'Value is required',
                 v => /^[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]$/.test(v) || 'Invalid value',
@@ -249,15 +250,15 @@ import axios from 'axios'
                 value => !value || value.size < 200000 || 'Image size should be less than 200 KB!',
             ],
             sdays: ['30days', '60days', '90days'],
-            ename: '',
-            edescription: '',
+            ename: null,
+            edescription: null,
             eveList: [],
             efrom: null,
             eto: null,
             top: null,
             bottom: null,
             recording: false,
-            sduration: '',
+            sduration: null,
             fmenu: false,
             tmenu: false,
             loading: false,
@@ -384,6 +385,7 @@ import axios from 'axios'
             async createEvent() {
                 var rString = this.randomString(7, '0123456789abcdefghijklmnopqrstuvwxyz');
                 this.loading = true
+                const user = supabase.auth.user()
                 var event = {
                     ename: this.ename,
                     edescription: this.edescription,
@@ -394,13 +396,24 @@ import axios from 'axios'
                     sduration: this.sduration,
                     streamkey: rString,
                     status: 'Inactive',
-                    payment: 'Paid'
+                    payment: 'Paid',
+                    uid: user.id
                 }
-                //var url = `https://${this.sdomain}.you2live.com/live/${rString}/index.m3u8`
-                await firebase.database().ref(`events/${this.uid}`).push(event)
-                //await firebase.database().ref(`streams/${this.sdomain}`).set({url:url})
-                this.$store.dispatch('getEvents', this.uid)
-                this.$store.dispatch('createAlert',{type: 'success', message: 'Event created'})
+                //await firebase.database().ref(`events/${this.uid}`).push(event)
+                const { data, error } = await supabase
+                .from('events')
+                .insert([
+                    event
+                ])
+                console.log(data, error);
+                //this.$store.dispatch('getEvents', this.uid)
+                if(data) {
+                    this.$store.dispatch('createAlert',{type: 'success', message: 'Event created'})
+                }
+                if(error) {
+                    this.$store.dispatch('createAlert',{type: 'error', message: error.message})
+                }
+                
                 this.close()
             },
 
@@ -442,7 +455,9 @@ import axios from 'axios'
                 return result;
             },
 
-            getEvents() {
+            async getEvents() {
+                // const { data, error } = await supabase.from('events').select('*').eq('uid', this.uid)
+                // console.log(data, error);
                 this.$store.dispatch('getEvents', this.uid)
             },
 
@@ -481,7 +496,7 @@ import axios from 'axios'
                 return this.$store.getters.loadedEVENTS
             },
             uid () {
-                return firebase.auth().currentUser.uid
+                return supabase.auth.user().id
             },
             lisLoading () {
                 if(this.eveList.length <= 0) {
@@ -491,8 +506,8 @@ import axios from 'axios'
                 }
             },
             user () {
-            return this.$store.getters.userProfile
-        }
+                return this.$store.getters.userProfile
+            }
         },
 
         mounted() {

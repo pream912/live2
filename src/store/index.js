@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/database'
+import {supabase} from '../supabase'
 
 Vue.use(Vuex)
 
@@ -48,10 +49,11 @@ export default new Vuex.Store({
         commit('SET_PROFILE', data.val())
       })
     },
-    getEvents ({commit}, payload) {
-      firebase.database().ref(`events/${payload}`).get('once').then((data) => {
-        var dat = data.val()
+    async getEvents ({commit}, payload) {
+      const { data, error } = await supabase.from('events').select('*').eq('uid', payload)
+        var dat = data
         let events = []
+        console.log(error);
         for(let i in dat) {
             events.push({
               eid: i,
@@ -68,7 +70,6 @@ export default new Vuex.Store({
             })
         }
         commit('SET_EVENT', events)
-      })
     }
   },
   modules: {
