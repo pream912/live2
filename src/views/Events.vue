@@ -313,7 +313,7 @@ import axios from 'axios'
                         status: events[i].status,
                         payment: events[i].payment,
                         live: stat.live,
-                        stream: `https://hls-${events[i].sdomain}.avmediawork.in/live/${events[i].streamkey}/index.m3u8`
+                        stream: `https://hls-${events[i].sdomain}.avmediawork.in/live/index.m3u8`
                     }
                     this.eveList.push(list)
                 }
@@ -357,7 +357,7 @@ import axios from 'axios'
             },
             startServer (item) {
                 this.serloading = true
-                let payload = JSON.stringify({name: item.sdomain, type: 'basic-server'})
+                let payload = JSON.stringify({name: item.sdomain, type: 'trans-server'})
                 axios.post('https://apis.avmediawork.in/create', payload, {
                     headers: {'Content-Type': 'application/json'}
                 })
@@ -453,7 +453,7 @@ import axios from 'axios'
                 this.ename = item.ename
                 this.evenT = item
                 if(item.status != 'Inactive') {
-                    let payload = JSON.stringify({name: item.sdomain, type: 'basic-server'})
+                    let payload = JSON.stringify({name: item.sdomain, type: 'trans-server'})
                     axios.post('https://apis.avmediawork.in/test', payload, {
                         headers: {'Content-Type': 'application/json'}
                     })

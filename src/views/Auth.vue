@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid style="height:100%; background-repeat: repeat; background-color: black;" :style="{'background-image': 'url(' + require('../assets/bg.png') + ')'}">
+    <v-container fluid style="height:100%">
         <v-snackbar
         :timeout="3000"
         :value="snack"
@@ -55,9 +55,10 @@
 </template>
 
 <script>
-import firebase from 'firebase/app'
-import 'firebase/auth'
-import 'firebase/database'
+import {supabase} from '../supabase'
+// import firebase from 'firebase/app'
+// import 'firebase/auth'
+// import 'firebase/database'
 export default {
     data: () => ({
         reg: false,
@@ -84,7 +85,10 @@ export default {
     methods: {
         login() {
             this.loading = true
-            firebase.auth().signInWithEmailAndPassword(this.email, this.password)
+            supabase.auth.signIn({
+                email: this.email,
+                password: this.password,
+            })
             .then(() => {
                 this.snack = true
                 this.scolor = 'success'
@@ -97,28 +101,69 @@ export default {
             })
             this.loading = false
         },
-        signup() {
+        // login() {
+        //     this.loading = true
+        //     firebase.auth().signInWithEmailAndPassword(this.email, this.password)
+        //     .then(() => {
+        //         this.snack = true
+        //         this.scolor = 'success'
+        //         this.stext = 'Logged in!'
+        //     })
+        //     .catch((err) => {
+        //         this.snack = true
+        //         this.scolor = 'error'
+        //         this.stext = err.message
+        //     })
+        //     this.loading = false
+        // },
+        async signup() {
             this.loading = true
-            firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
-            .then((snap) => {
-                firebase.database().ref('users/'+snap.user.uid).set({
+            supabase.auth.signUp(
+                {
+                    email: this.email,
+                    password: this.password,
+                },
+                {
+                data: {
                     name: this.name,
                     phone: this.phone,
-                    email: this.email,
-                    address: ''
-                })
-                .then(() => {
+                }
+            }).then( (data) => {
+                if(data.user) {
                     this.snack = true
                     this.scolor = 'success'
                     this.stext = 'Account created successfully!'
-                })
-            })
-            .catch((err) => {
-                this.snack = true
-                this.scolor = 'error'
-                this.stext = err.message
-            })
+                }
+                if(data.error) {
+                    this.snack = true
+                    this.scolor = 'error'
+                    this.stext = data.error.message
+                }
+                this.loading = true
+            } )
         }
+        // signup() {
+        //     this.loading = true
+        //     firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
+        //     .then((snap) => {
+        //         firebase.database().ref('users/'+snap.user.uid).set({
+        //             name: this.name,
+        //             phone: this.phone,
+        //             email: this.email,
+        //             address: ''
+        //         })
+        //         .then(() => {
+        //             this.snack = true
+        //             this.scolor = 'success'
+        //             this.stext = 'Account created successfully!'
+        //         })
+        //     })
+        //     .catch((err) => {
+        //         this.snack = true
+        //         this.scolor = 'error'
+        //         this.stext = err.message
+        //     })
+        // }
     },
 
     computed: {
