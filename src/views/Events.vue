@@ -27,51 +27,35 @@
                                     >
                                         <template v-slot:activator="{ on, attrs }">
                                         <v-text-field
-                                        v-model="efrom"
+                                        v-model="efromdate"
                                         label="From"
                                         v-bind="attrs"
                                         v-on="on"
                                         readonly
                                         ></v-text-field>
                                         </template>
-                                        <v-date-picker v-model="efrom" :max="max" :min="min"></v-date-picker>
+                                        <v-date-picker v-model="efromdate" :max="max" :min="min"></v-date-picker>
                                     </v-menu>
                                 </v-col>
                                 <v-col cols="6">
-                                    <v-menu
-                                        v-model="tmenu"
-                                        :close-on-content-click="false"
-                                        :nudge-right="40"
-                                        transition="scale-transition"
-                                        offset-y
-                                        min-width="290px"
-                                    >
-                                        <template v-slot:activator="{ on }">
-                                        <v-text-field
-                                        v-model="eto"
-                                        label="To"
-                                        v-on="on"
-
-                                        readonly
-                                        ></v-text-field>
-                                        </template>
-                                        <v-date-picker v-model="eto" :max="max" :min="min"></v-date-picker>
-                                    </v-menu>
+                                    
+                                        <v-time-picker
+                                            v-model="etime"
+                                            full-width
+                                            type="month"
+                                        ></v-time-picker>
                                 </v-col>
-                                <!-- <v-col cols="6">
-                                    <v-file-input v-model="top" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Top image (200kb max)"></v-file-input>
-                                </v-col>
-                                <v-col cols="6">
-                                    <v-file-input v-model="bottom" :rules="rules" accept="image/png, image/jpeg, image/bmp" show-size label="Bottom image (200kb max)"></v-file-input>
-                                </v-col> -->
                                 <v-col cols="6">
                                     <v-text-field :rules="sdrules" v-model="sdomain" label="URL"></v-text-field>
                                 </v-col>
                                 <v-col cols="6">
-                                    <h4>.you2live.com</h4>
+                                    <h4>.you2live.in</h4>
                                 </v-col>
                                 <v-col cols="6">
-                                    <v-checkbox disabled v-model="recording" label="Recording"></v-checkbox>
+                                    <v-checkbox v-model="recording" label="Recording"></v-checkbox>
+                                </v-col>
+                                <v-col cols="6">
+                                    <v-text-field required v-model="ename" label="Event name"></v-text-field>
                                 </v-col>
                                 <v-col cols="6">
                                     <v-select v-model="sduration" :disabled="!recording" label="Storage duration" :items="sdays"></v-select>
@@ -110,7 +94,7 @@
                         >
                             mdi-wrench
                         </v-icon>
-                        <v-btn @click="startServer(item)" v-if="item.status == 'Inactive' && item.payment == 'Paid'" color="green" small>Start server</v-btn>
+                        <v-btn @click="startServer(item)" v-if="item.status == 'Inactive'" color="green" small>Start server</v-btn>
                     </template>
                     <template v-slot:[`item.live`]="{ item }">
                         <v-btn text v-if="item.live" color="green" small>Live</v-btn>
@@ -122,13 +106,13 @@
         <v-row>
             <v-dialog
             v-model="dialog1"
-            fullscreen
+            max-width="700"
             hide-overlay
             transition="dialog-bottom-transition">
                 <v-card>
                     <v-toolbar>
                         <h3 class="pl-3">{{ename}}</h3>
-                        <v-btn @click="startServer" class="ml-5" color="primary" v-if="evenT.payment == 'Paid' && evenT.status == 'Inactive'">Start server</v-btn>
+                        <v-btn @click="startServer" class="ml-5" color="primary" v-if="evenT.status == 'Inactive'">Start server</v-btn>
                         <v-spacer></v-spacer>
                         <v-btn  @click="dialog1 = false" small icon>
                             <v-icon class="red--text">mdi-close</v-icon>
@@ -140,8 +124,8 @@
                                 <table>
                                     <tr>
                                         <td>Stream link:</td>
-                                        <td class="pa-3">https://{{sdomain}}.you2live.com
-                                            <v-btn small icon @click="shareURL(`https://${sdomain}.you2live.com`)"> <v-icon> mdi-share-variant </v-icon> </v-btn>
+                                        <td class="pa-3">https://{{sdomain}}.you2live.in
+                                            <v-btn small icon @click="shareURL(`https://${sdomain}.you2live.in`)"> <v-icon> mdi-share-variant </v-icon> </v-btn>
                                         </td>
                                     </tr>
                                     <tr>
@@ -235,12 +219,11 @@ import axios from 'axios'
             streamkey: '',
             sdrules: [
                 v => !!v || 'Value is required',
-                v => /^[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]$/.test(v) || 'Invalid value',
+                v => /^[a-zA-Z0-9]{4,20}$/.test(v) || 'Invalid value',
             ],
             headers: [
                 {text: 'Event name', value: 'ename'},
                 {text: 'Event Date', value: 'efrom'},
-                {text: 'Payment', value: 'payment'},
                 {text: 'Stream', value: 'live'},
                 {text: 'Status', value: 'status'},
                 {text: 'Actions', value: 'actions'},
@@ -252,8 +235,8 @@ import axios from 'axios'
             ename: '',
             edescription: '',
             eveList: [],
-            efrom: null,
-            eto: null,
+            efromdate: null,
+            etime: null,
             top: null,
             bottom: null,
             recording: false,
@@ -285,8 +268,8 @@ import axios from 'axios'
                 this.dialog = false
                 this.ename = ''
                 this.edescription = ''
-                this.efrom = null
-                this.eto = null
+                this.efromdate = null
+                this.etime = null
                 this.sduration = ''
                 this.recording = false
                 this.loading = false
@@ -311,9 +294,9 @@ import axios from 'axios'
                         sdomain: events[i].sdomain,
                         streamkey: events[i].streamkey,
                         status: events[i].status,
-                        payment: events[i].payment,
+                        // payment: events[i].payment,
                         live: stat.live,
-                        stream: `https://hls-${events[i].sdomain}.avmediawork.in/live/index.m3u8`
+                        stream: `https://hls-${events[i].sdomain}.avmediawork.in/live/${events[i].streamkey}/index.m3u8`
                     }
                     this.eveList.push(list)
                 }
@@ -357,7 +340,7 @@ import axios from 'axios'
             },
             startServer (item) {
                 this.serloading = true
-                let payload = JSON.stringify({name: item.sdomain, type: 'trans-server'})
+                let payload = JSON.stringify({name: item.sdomain, type: 'basic-server'})
                 axios.post('https://apis.avmediawork.in/create', payload, {
                     headers: {'Content-Type': 'application/json'}
                 })
@@ -394,9 +377,9 @@ import axios from 'axios'
                     sduration: this.sduration,
                     streamkey: rString,
                     status: 'Inactive',
-                    payment: 'Paid'
+                    // payment: 'Paid'
                 }
-                //var url = `https://${this.sdomain}.you2live.com/live/${rString}/index.m3u8`
+                //var url = `https://${this.sdomain}.you2live.in/live/${rString}/index.m3u8`
                 await firebase.database().ref(`events/${this.uid}`).push(event)
                 //await firebase.database().ref(`streams/${this.sdomain}`).set({url:url})
                 this.$store.dispatch('getEvents', this.uid)
@@ -453,7 +436,7 @@ import axios from 'axios'
                 this.ename = item.ename
                 this.evenT = item
                 if(item.status != 'Inactive') {
-                    let payload = JSON.stringify({name: item.sdomain, type: 'trans-server'})
+                    let payload = JSON.stringify({name: item.sdomain, type: 'basic-server'})
                     axios.post('https://apis.avmediawork.in/test', payload, {
                         headers: {'Content-Type': 'application/json'}
                     })
@@ -466,8 +449,29 @@ import axios from 'axios'
                     })
                 }
             },
+
+            dateTest() {
+                // let d = new Date(this.efromdate)
+                // let [hours, minutes] = this.etime.split(':')
+                // let totalMilliseconds = (+hours * 60 * 60 * 1000) + (+minutes * 60 * 1000)
+                // let t = +d.getTime() + +totalMilliseconds
+                // let n = 
+                //d.setDate(this.efromdate)
+                //d.setTime(this.etime)
+                //console.log(d) 
+            }
         },
         computed: {
+            startTime() {
+                // if (this.efromdate && this.etime) {
+                //     let d = new Date()
+                //     d.setDate(this.efromdate)
+                //     d.setTime(this.etime)
+                //     return d.toISOString()
+                // } else {
+                    return 0
+                //}
+            },
             min () {
                 let date = new Date
                 return date.toISOString()
@@ -485,9 +489,9 @@ import axios from 'axios'
             },
             lisLoading () {
                 if(this.eveList.length <= 0) {
-                    return true
-                } else {
                     return false
+                } else {
+                    return true
                 }
             },
             user () {
