@@ -4,63 +4,124 @@
             <v-btn color="primary" @click="newEvent">Create Event</v-btn>
             <v-dialog v-model="dialog"
             persistent
-            max-width="750px">
+            max-width="850px">
                 <v-card>
                     <v-card-title>New Event</v-card-title>
                     <v-card-text>
                         <v-container>
-                            <v-row lazy-validation>
-                                <v-col cols="12">
-                                    <v-text-field required v-model="ename" label="Event name"></v-text-field>
+                            <v-row>
+                                <v-col cols="8">
+                                    <v-row lazy-validation>
+                                        <v-col cols="12">
+                                            <v-text-field required v-model="ename" label="Event name"></v-text-field>
+                                        </v-col>
+                                        <v-col cols="6">
+                                            <v-menu
+                                                v-model="fmenu"
+                                                :close-on-content-click="false"
+                                                :nudge-right="40"
+                                                transition="scale-transition"
+                                                offset-y
+                                                min-width="290px"
+                                            >
+                                                <template v-slot:activator="{ on, attrs }">
+                                                <v-text-field
+                                                v-model="efromdate"
+                                                label="Start date"
+                                                v-bind="attrs"
+                                                v-on="on"
+                                                readonly
+                                                ></v-text-field>
+                                                </template>
+                                                <v-date-picker v-model="efromdate" :max="max" :min="min"></v-date-picker>
+                                            </v-menu>
+                                        </v-col>
+                                        <v-col cols="6">
+                                            <v-menu
+                                                v-model="tmenu"
+                                                :close-on-content-click="false"
+                                                :nudge-right="40"
+                                                transition="scale-transition"
+                                                offset-y
+                                                min-width="290px"
+                                            >
+                                                <template v-slot:activator="{ on, attrs }">
+                                                <v-text-field
+                                                v-model="etime"
+                                                label="Start time"
+                                                v-bind="attrs"
+                                                v-on="on"
+                                                readonly
+                                                ></v-text-field>
+                                                </template>
+                                                <v-time-picker
+                                                    v-model="etime"
+                                                    full-width
+                                                    type="month"
+                                                ></v-time-picker>
+                                            </v-menu>
+                                        </v-col>
+                                        <v-col cols="6">
+                                            <v-select v-model="lduration" label="Live duration" :items="ldura"></v-select>
+                                        </v-col>
+                                        <v-col cols="6">
+                                            <v-text-field :rules="sdrules" v-model="sdomain" suffix=".you2live.in" label="URL"></v-text-field>
+                                        </v-col>
+                                        <v-col cols="6">
+                                            <v-checkbox v-model="recording" label="Recording"></v-checkbox>
+                                        </v-col>
+                                        <v-col cols="6">
+                                            <v-select v-model="rduration" :disabled="!recording" label="Recording duration" :items="rhrs"></v-select>
+                                        </v-col>
+                                        <v-col cols="6">
+                                            <v-select v-model="sduration" :disabled="!rduration" label="Storage duration" :items="sdays"></v-select>
+                                        </v-col>
+                                    </v-row>
                                 </v-col>
-                                <v-col cols="12">
-                                    <v-textarea required v-model="edescription" label="Event description"></v-textarea>
+                                <v-col cols="4">
+                                    <v-row>
+                                        <v-col cols="12">
+                                            <h2>Rate</h2>
+                                        </v-col>
+                                        <v-simple-table>
+                                            <template v-slot:default>
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-left">
+                                                            Service
+                                                        </th>
+                                                        <th class="text-left">
+                                                            Duration
+                                                        </th>
+                                                        <th class="text-right">
+                                                            Amount(₹)
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Live</td>
+                                                        <td>{{ lduration }}</td>
+                                                        <td>{{ lcost }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                       <td>Recording</td>
+                                                       <td>{{ rduration }}</td>
+                                                        <td>{{ rcost }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                       <td>Storage</td>
+                                                       <td>{{ sduration }}</td>
+                                                        <td>{{ scost }}X</td>
+                                                    </tr>
+                                                </tbody>
+                                            </template>
+                                        </v-simple-table>
+                                        <h3 class="green--text">Total amount: ₹{{ tamount }}  </h3>
+                                        <h3>[ {{ lcost }} + ( {{ rcost }} x {{ scost }} )]</h3>
+                                    </v-row>
                                 </v-col>
-                                <v-col cols="6">
-                                    <v-menu
-                                        v-model="fmenu"
-                                        :close-on-content-click="false"
-                                        :nudge-right="40"
-                                        transition="scale-transition"
-                                        offset-y
-                                        min-width="290px"
-                                    >
-                                        <template v-slot:activator="{ on, attrs }">
-                                        <v-text-field
-                                        v-model="efromdate"
-                                        label="From"
-                                        v-bind="attrs"
-                                        v-on="on"
-                                        readonly
-                                        ></v-text-field>
-                                        </template>
-                                        <v-date-picker v-model="efromdate" :max="max" :min="min"></v-date-picker>
-                                    </v-menu>
-                                </v-col>
-                                <v-col cols="6">
-                                    
-                                        <v-time-picker
-                                            v-model="etime"
-                                            full-width
-                                            type="month"
-                                        ></v-time-picker>
-                                </v-col>
-                                <v-col cols="6">
-                                    <v-text-field :rules="sdrules" v-model="sdomain" label="URL"></v-text-field>
-                                </v-col>
-                                <v-col cols="6">
-                                    <h4>.you2live.in</h4>
-                                </v-col>
-                                <v-col cols="6">
-                                    <v-checkbox v-model="recording" label="Recording"></v-checkbox>
-                                </v-col>
-                                <v-col cols="6">
-                                    <v-text-field required v-model="ename" label="Event name"></v-text-field>
-                                </v-col>
-                                <v-col cols="6">
-                                    <v-select v-model="sduration" :disabled="!recording" label="Storage duration" :items="sdays"></v-select>
-                                </v-col>
-                            </v-row>
+                            </v-row>    
                         </v-container>
                     </v-card-text>
                     <v-card-actions>
@@ -231,7 +292,11 @@ import axios from 'axios'
             rules: [
                 value => !value || value.size < 200000 || 'Image size should be less than 200 KB!',
             ],
-            sdays: ['30days', '60days', '90days'],
+            sdays: ['30 Days', '60 Days', '90 Days', '180 Days'],
+            lduration: '',
+            ldura: ['12 Hours', '24 Hours', '48 Hours', '5 Days'],
+            rduration: null,
+            rhrs: ['2 Hours', '4 Hours', '8 Hours', '12 Hours', '24 Hours'],
             ename: '',
             edescription: '',
             eveList: [],
@@ -472,15 +537,47 @@ import axios from 'axios'
                     return 0
                 //}
             },
+
+            lcost() {
+                if(this.lduration == '12 Hours') return 150
+                else if(this.lduration == '24 Hours') return 250
+                else if(this.lduration == '48 Hours') return 400
+                else if(this.lduration == '5 Days') return 800
+                else return 0
+            },
+
+            rcost() {
+                if(this.rduration == '2 Hours') return 200
+                else if(this.rduration == '4 Hours') return 350
+                else if(this.rduration == '8 Hours') return 600
+                else if(this.rduration == '12 Hours') return 1000
+                else if(this.rduration == '24 Hours') return 1500
+                else return 0
+            },
+            
+            scost() {
+                if(this.sduration == '30 Days') return 1
+                else if(this.sduration == '60 Days') return 2
+                else if(this.sduration == '90 Days') return 3
+                else if(this.sduration == '180 Days') return 6
+                else return 0
+            },
+
+            tamount() {
+                return +this.lcost + (+this.rcost * +this.scost)
+            },
+
             min () {
                 let date = new Date
                 return date.toISOString()
             },
+
             max () {
                 let date = new Date
                 date.setDate(date.getDate() + 31)
                 return date.toISOString()
             },
+
             events () {
                 return this.$store.getters.loadedEVENTS
             },
@@ -504,15 +601,7 @@ import axios from 'axios'
             if (events.length <= 0) {
                 this.getEvents()
             }
-            // this.listEvents()
-            // setInterval(() => {
-            //     if(this.eveList.length <= 0) {
-            //         this.listEvents()
-            //     }
-            // }, 5000)
-            // this.refresh = setInterval(() => {
-            //     this.refreshEvents()
-            // }, 10000)
+
         },
         beforeDestroy () {
             clearInterval(this.refresh)

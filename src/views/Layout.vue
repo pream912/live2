@@ -28,6 +28,14 @@
                         <v-list-item-title>Profile</v-list-item-title>
                     </v-list-item-content>
                 </v-list-item>
+                <v-list-item link to="/credits">
+                    <v-list-item-icon>
+                        <v-icon> mdi-cash-100 </v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                        <v-list-item-title>Credits</v-list-item-title>
+                    </v-list-item-content>
+                </v-list-item>
             </v-list>
             <template v-slot:append>
                 <div class="pa-2">
@@ -42,6 +50,7 @@
             <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
             <v-toolbar-title>You<span class="red--text">2</span>Live.com</v-toolbar-title>
             <v-spacer></v-spacer>
+            <h3>Credits: <span class="green--text"> ₹500 </span></h3>
             <v-avatar>
                 <v-icon>
                     mdi-account-circle
